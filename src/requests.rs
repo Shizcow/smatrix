@@ -7,6 +7,10 @@
 use curl::easy::Easy;
 use std::str;
 
+fn build_url(tickers: Vec<&str>) -> String {
+    "https://query1.finance.yahoo.com/v7/finance/quote?symbols=".to_string() + &tickers.join(",")
+}
+
 #[allow(dead_code)]
 struct Report {
     ticker: String,
@@ -15,12 +19,11 @@ struct Report {
     change_percent: f32
 }
 
-fn main(){
-
+fn request_tickers(tickers: Vec<&str>) -> Vec<Report> {
     let mut dst = Vec::new();
     {
 	let mut easy = Easy::new();
-	easy.url("https://query1.finance.yahoo.com/v7/finance/quote?symbols=TSLA,AMD").unwrap();
+	easy.url(&build_url(tickers)).unwrap();
 	
 	let mut transfer = easy.transfer();
 	transfer.write_function(|data| {
@@ -45,6 +48,13 @@ fn main(){
 			     change: change,
 			     change_percent: change_percent});
     }
+
+    reports
+}
+
+fn main(){
+
+    let reports = request_tickers(vec!["TSLA","AMD"]);
 
     for report in reports {
 	println!("Ticker: {:?}", report.ticker);
