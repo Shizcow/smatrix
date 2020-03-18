@@ -17,3 +17,5 @@ test = false
 bench = false
 
 [dependencies]
+json = "0.12.4"
+curl = "0.4.28"
