@@ -92,7 +92,7 @@ fn main(){
 	println!("Ticker: {:?}", report.ticker);
 	println!("Price: {:?}", report.price);
 	println!("Change: {:?}", report.change);
-	println!("Change Percet: {:?}%", report.change_percent);
+	println!("Change Percent: {:?}%", report.change_percent);
     }
     
 }
