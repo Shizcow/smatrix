@@ -7,6 +7,13 @@
 use curl::easy::Easy;
 use std::str;
 
+#[allow(dead_code)]
+struct Report {
+    ticker: String,
+    price: f32,
+    change: f32,
+    change_percent: f32
+}
 
 fn main(){
 
@@ -27,10 +34,22 @@ fn main(){
     let parsed = json::parse(pre_parsed).unwrap();
 
     let results = &parsed["quoteResponse"]["result"];
+    let mut reports = vec![];
     for i in 0..results.len() {
-	println!("Ticker: {:}", results[i]["symbol"]);
-	println!("Price: {:}", results[i]["regularMarketPrice"]);
-	println!("Change: {:}", results[i]["regularMarketChange"]);
-	println!("Change Percet: {:}%", results[i]["regularMarketChangePercent"]);
+	let ticker = results[i]["symbol"].as_str().unwrap();
+	let price = results[i]["regularMarketPrice"].as_f32().unwrap();
+	let change = results[i]["regularMarketChange"].as_f32().unwrap();
+	let change_percent = results[i]["regularMarketChangePercent"].as_f32().unwrap();
+	reports.push(Report {ticker: ticker.to_string(),
+			     price: price,
+			     change: change,
+			     change_percent: change_percent});
+    }
+
+    for report in reports {
+	println!("Ticker: {:?}", report.ticker);
+	println!("Price: {:?}", report.price);
+	println!("Change: {:?}", report.change);
+	println!("Change Percet: {:?}%", report.change_percent);
     }
 }
