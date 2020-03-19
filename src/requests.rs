@@ -83,16 +83,3 @@ pub fn get_sp500_tickers() -> Vec<String>  {
     
     tickers    
 }
-
-fn main(){
-    
-    let reports = request_tickers(&get_sp500_tickers());
-
-    for report in reports {
-	println!("Ticker: {:?}", report.ticker);
-	println!("Price: {:?}", report.price);
-	println!("Change: {:?}", report.change);
-	println!("Change Percet: {:?}%", report.change_percent);
-    }
-    
-}
