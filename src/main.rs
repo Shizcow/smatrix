@@ -4,8 +4,8 @@
  * Handles setup and TUI
  */
 
+use rand::prelude::*;
 use std::{thread, time};
-
 use ncurses::*;
 
 static COLOR_PAIR_BACKGROUND: i16 = 1;
@@ -27,17 +27,15 @@ impl Streak {
 	vprintw(self.y_head, self.x_head, &self.contents, self.color);
     }
     // move down and print, returns false if off the bottom of screen
-    fn update(&mut self, screen_height: i32) -> bool {
+    fn update(&mut self){
 	attron(COLOR_PAIR(COLOR_PAIR_BACKGROUND));
 	mvaddch(self.y_head,self.x_head,' ' as u32);
 	attroff(COLOR_PAIR(COLOR_PAIR_BACKGROUND));
 	self.y_head+=1;
-	if self.y_head > screen_height {
-	    false
-	} else {
-	    self.print();
-	    true
-	}
+	self.print();
+    }
+    fn finished(&self, screen_height: i32) -> bool {
+	self.y_head >= screen_height
     }
 }
 
@@ -57,16 +55,21 @@ fn main() {
     init_pair(COLOR_PAIR_RED,        COLOR_RED,   COLOR_BLACK);
     bkgd(' ' as chtype | COLOR_PAIR(COLOR_PAIR_BACKGROUND) as chtype); // fill background
 
-    
-    let mut streak = Streak::new("1234567890".to_string(), 10, COLOR_PAIR(COLOR_PAIR_RED));
-
-    while streak.update(screen_height) {
+    let mut rng = rand::thread_rng();
+    let mut streaks = Vec::new();
+    loop {
+	if rng.gen::<f32>() > 0.5 {
+	    streaks.push(Streak::new("1234567890".to_string(), rng.gen_range(0, screen_width-1), COLOR_PAIR(COLOR_PAIR_RED)));
+	}
+	for streak in &mut streaks {
+	    streak.update();
+	}
+	streaks.retain(|streak|!streak.finished(screen_height));
 	refresh();
 	thread::sleep(time::Duration::from_millis(100));
-    }
-    
+    }    
 
-    endwin();
+    //endwin();
 }
 
 fn vprintw(mut y: i32, x: i32, string: &str, attr: attr_t) {
