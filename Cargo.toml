@@ -20,3 +20,4 @@ bench = false
 json = "0.12.4"
 curl = "0.4.28"
 scraper = "0.11.0"
+ncurses = "5.99.0"
