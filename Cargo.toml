@@ -4,18 +4,6 @@ version = "0.1.0"
 authors = ["Shizcow <pohl.devin@gmail.com>"]
 edition = "2018"
 
-[[bin]]
-name = "smatrix"
-path = "src/main.rs"
-test = false
-bench = false
-
-[[bin]]
-name = "requests"
-path = "src/requests.rs"
-test = false
-bench = false
-
 [dependencies]
 json = "0.12.4"
 curl = "0.4.28"

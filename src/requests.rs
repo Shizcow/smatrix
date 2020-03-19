@@ -13,15 +13,15 @@ fn build_quote_url(tickers: &Vec<String>) -> String {
     "https://query1.finance.yahoo.com/v7/finance/quote?symbols=".to_string() + &tickers.join(",")
 }
 
-struct Report {
-    ticker: String,
-    price: f32,
-    change: f32,
-    change_percent: f32
+pub struct Report {
+    pub ticker: String,
+    pub price: f32,
+    pub change: f32,
+    pub change_percent: f32
 }
 
 #[allow(dead_code)]
-fn request_tickers(tickers: &Vec<String>) -> Vec<Report> {
+pub fn request_tickers(tickers: &Vec<String>) -> Vec<Report> {
     let mut response = Vec::new();
     {
 	let mut easy = Easy::new();
@@ -58,7 +58,7 @@ fn request_tickers(tickers: &Vec<String>) -> Vec<Report> {
 
 // NOTE: there's more than 500 tickers
 #[allow(dead_code)]
-fn get_sp500_tickers() -> Vec<String>  {
+pub fn get_sp500_tickers() -> Vec<String>  {
     let mut response = Vec::new();
     {
 	let mut easy = Easy::new();
