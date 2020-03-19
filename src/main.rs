@@ -19,6 +19,7 @@ static COLOR_PAIR_RED       : i16 = 3;
 static COLOR_PAIR_NORMAL    : i16 = 4;
 
 struct Streak {
+    title: String, // title is printed differently
     contents: String,
     x_head: i32,
     y_head: i32,
@@ -26,16 +27,17 @@ struct Streak {
 }
 
 impl Streak {
-    fn new(contents: String, x: i32, color: attr_t) -> Self {
-	Self{y_head: 0-contents.len() as i32, x_head: x, contents: contents, color: color}
-    }                                                // GREEN   RED     NEUTRAL
+    //                                                   GREEN   RED     NEUTRAL
     fn new_from_report(report: &Report, x: i32, colors: (attr_t, attr_t, attr_t)) -> Self {
 	let color = if report.change > 0.0 {colors.0} else if report.change < 0.0 {colors.1} else {colors.2};
-	let contents = report.ticker.clone() + " " + &report.change.abs().to_string() + "$ " + &report.change_percent.abs().to_string() + "%";
-	Self{y_head: 0-contents.len() as i32, x_head: x, contents: contents, color: color}
+	let contents = report.change.abs().to_string() + "$ " + &report.change_percent.abs().to_string() + "%";
+	Self{y_head: 0-(contents.len()+report.ticker.len()) as i32, x_head: x, contents: contents, color: color, title: report.ticker.clone()+" "}
     }
     fn print(&self) {
-	vprintw(self.y_head, self.x_head, &self.contents, self.color);
+	attron(A_BOLD());
+	vprintw(self.y_head, self.x_head, &self.title, self.color);
+	attroff(A_BOLD());
+	vprintw(self.y_head+self.title.len() as i32+1, self.x_head, &self.contents, self.color);
     }
     // move down and print, returns false if off the bottom of screen
     fn update(&mut self){
