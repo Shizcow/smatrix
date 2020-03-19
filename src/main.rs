@@ -56,10 +56,20 @@ fn main() {
     bkgd(' ' as chtype | COLOR_PAIR(COLOR_PAIR_BACKGROUND) as chtype); // fill background
 
     let mut rng = rand::thread_rng();
-    let mut streaks = Vec::new();
+    let mut streaks: Vec<Streak> = Vec::new();
     loop {
-	if rng.gen::<f32>() > 0.5 {
-	    streaks.push(Streak::new("1234567890".to_string(), rng.gen_range(0, screen_width-1), COLOR_PAIR(COLOR_PAIR_RED)));
+	for _ in 0..3 { // try to spawn
+	    let target_x = rng.gen_range(0, screen_width-1);
+	    let mut any = false;
+	    for i in 0..streaks.len() { // couldn't figure out Iterator::any
+		if streaks[i].x_head==target_x {
+		    any = true;
+		    break;
+		}
+	    }
+	    if !any {
+		streaks.push(Streak::new("1234567890".to_string(), target_x, COLOR_PAIR(COLOR_PAIR_RED)));
+	    }
 	}
 	for streak in &mut streaks {
 	    streak.update();
