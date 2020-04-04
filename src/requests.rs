@@ -13,7 +13,7 @@ fn build_quote_url(tickers: &Vec<String>) -> String {
     "https://query1.finance.yahoo.com/v7/finance/quote?symbols=".to_string() + &tickers.join(",")
 }
 
-pub struct Report {
+pub struct Report { // TODO: change these into strings, impl len() and such
     pub ticker: String,
     pub price: f32,
     pub change: f32,

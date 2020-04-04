@@ -52,6 +52,11 @@ impl Streak {
     }
 }
 
+// Things to change: the stock prices don't move, just the lights do
+// Padding on top and bottom (configurable?)
+// Add modes: rain mode?
+
+
 fn main() {
     let mut rng = rand::thread_rng();
     
