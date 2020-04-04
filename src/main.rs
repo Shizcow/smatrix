@@ -3,7 +3,9 @@
  *
  * Handles setup and TUI
  */
+#![allow(unused)] // TODO: remove when code is good
 
+mod scene;
 mod requests;
 use crate::requests::request_tickers;
 use crate::requests::get_sp500_tickers;
