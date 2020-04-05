@@ -28,18 +28,15 @@ impl MessageQueue {
 	Self{data: VecDeque::with_capacity(capacity), closed}
     }
     fn pop(&mut self) -> Option<Message> {
-	let message_check = self.data.pop_front();
-	if message_check.is_none() {
-	    return None
-	}
-	let message = message_check.unwrap();
-	if self.closed { // recycle to back of queue
-	    self.data.push_back(message.clone());
-	}
-	Some(message)
+	self.data.pop_front()
     }
     fn push(&mut self, message: Message) {
 	self.data.push_back(message);
+    }
+    fn recycle(&mut self, message: Message) {
+	if self.closed { // recycle to back of queue
+	    self.data.push_back(message);
+	}
     }
 }
 
@@ -139,11 +136,12 @@ impl Streak {
 	    )..(screen_height.min(first_string.len() as i32)) {
 		inner_text.push(first_string[i as usize]);
 		if inner_text.len() as i32 >= screen_height {
+		    queue.recycle(first_msg);
 		    return Streak{head_x, head_y: 0, length, inner_text}; // if first message is too long
 		}
 	    }
 	}
-	
+	queue.recycle(first_msg);
 	loop {
 	    let r: i32 = if max_padding > 0 {
 		rng.gen_range(1,max_padding)
@@ -177,6 +175,7 @@ impl Streak {
 		    for i in 0..(screen_height as usize-inner_text.len()) {
 			inner_text.push(next_string[i as usize]); // fill remaining
 		    }
+		    queue.recycle(next_msg);
 		    break; // streak is full
 		} else {
 		    for i in 0..next_string.len() {
@@ -184,6 +183,7 @@ impl Streak {
 		    }
 		}
 	    }
+	    queue.recycle(next_msg);
 	}
 	Streak{head_x, head_y: 0, length, inner_text}
     }
@@ -237,12 +237,6 @@ impl Message {
     }
     pub fn len(&self) -> usize {
 	self.title.len()+self.body.len()
-    }
-}
-
-impl Clone for Message {
-    fn clone(&self) -> Self {
-	Message::new(self.title.clone(), self.body.clone(), self.color)
     }
 }
 
