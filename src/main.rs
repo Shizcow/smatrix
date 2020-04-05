@@ -6,6 +6,7 @@
 #![allow(unused)] // TODO: remove when code is good
 
 mod scene;
+use crate::scene::{Message, Streak};
 mod requests;
 use crate::requests::request_tickers;
 use crate::requests::get_sp500_tickers;
@@ -20,6 +21,7 @@ static COLOR_PAIR_GREEN     : i16 = 2;
 static COLOR_PAIR_RED       : i16 = 3;
 static COLOR_PAIR_NORMAL    : i16 = 4;
 
+/*
 struct Streak {
     title: String, // title is printed differently
     contents: String,
@@ -53,9 +55,10 @@ impl Streak {
 	self.y_head >= screen_height
     }
 }
+ */
 
 // Things to change: the stock prices don't move, just the lights do
-// Padding on top and bottom (configurable?)
+// Padding on top and bottom (configurable?) 
 // Add modes: rain mode?
 
 
@@ -78,8 +81,10 @@ fn main() {
     init_pair(COLOR_PAIR_NORMAL,     COLOR_WHITE, COLOR_BLACK);
 
     bkgd(' ' as chtype | COLOR_PAIR(COLOR_PAIR_BACKGROUND) as chtype); // fill background
-    
-    
+
+
+
+    /*
     let mut reports; // TODO: connecting to the matrix art
     {
 	attron(COLOR_PAIR(COLOR_PAIR_NORMAL));
@@ -96,7 +101,28 @@ fn main() {
 	refresh();
 	attroff(COLOR_PAIR(COLOR_PAIR_NORMAL));
     }
+     */
 
+    let mut messages: Vec<Message> = Vec::new();
+    for _ in 0..10 {
+	messages.push(Message::new("head ".to_string(), "body".to_string(), COLOR_PAIR(COLOR_PAIR_GREEN)));
+    }
+    /*
+    for report in reports {
+	messages.push(Message::new_from_report(report, COLOR_PAIR(COLOR_PAIR_GREEN), COLOR_PAIR(COLOR_PAIR_RED), COLOR_PAIR(COLOR_PAIR_NORMAL)));
+    }*/
+
+    let mut streak = Streak::new_with_queue(&mut messages, 0, 5, screen_height);
+
+    while !streak.finished(screen_height) {
+	streak.render(screen_height);
+	streak.derender(COLOR_PAIR(COLOR_PAIR_RED));
+	refresh();
+	streak.advance();
+	thread::sleep(time::Duration::from_millis(100));
+    }
+    
+    /*
     let mut streaks: Vec<Streak> = Vec::new();
     for report in reports {
 	for _ in 0..3 { // try to spawn
@@ -120,6 +146,7 @@ fn main() {
 	refresh();
 	thread::sleep(time::Duration::from_millis(100));
     }    
+     */
 
     endwin();
 }
