@@ -6,7 +6,7 @@
 #![allow(unused)] // TODO: remove when code is good
 
 mod scene;
-use crate::scene::{Message, Streak};
+use crate::scene::{Message, Scene};
 mod requests;
 use crate::requests::request_tickers;
 use crate::requests::get_sp500_tickers;
@@ -103,8 +103,8 @@ fn main() {
     }
      */
 
-    let mut messages: Vec<Message> = Vec::new();
-    for _ in 0..10 {
+    /*let mut queue: Vec<Message> = Vec::new();
+    for _ in 0..100 {
 	messages.push(Message::new("head".to_string(), "body".to_string(), COLOR_PAIR(COLOR_PAIR_GREEN)));
     }
     /*
@@ -112,13 +112,30 @@ fn main() {
 	messages.push(Message::new_from_report(report, COLOR_PAIR(COLOR_PAIR_GREEN), COLOR_PAIR(COLOR_PAIR_RED), COLOR_PAIR(COLOR_PAIR_NORMAL)));
     }*/
 
-    let mut streak = Streak::new_with_queue(&mut messages, 0, 5, screen_height, 5);
+    let mut scene = Scene::new(screen_width, screen_height, 5, COLOR_PAIR(COLOR_PAIR_NORMAL));
+    
 
     while !streak.finished(screen_height) {
 	streak.render(screen_height);
 	streak.derender(COLOR_PAIR(COLOR_PAIR_RED));
 	refresh();
 	streak.advance();
+	thread::sleep(time::Duration::from_millis(100));
+    }*/
+
+
+    
+
+    let mut scene = Scene::new(screen_width, screen_height, 50, COLOR_PAIR(COLOR_PAIR_NORMAL));
+    for i in (0..10000).rev() {
+	scene.push(Message::new("head ".to_string(), "body#".to_string()+&i.to_string(), COLOR_PAIR(COLOR_PAIR_GREEN)));
+    }
+
+    scene.seed();
+
+    loop {
+	scene.advance();
+	refresh();
 	thread::sleep(time::Duration::from_millis(100));
     }
     
