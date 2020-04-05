@@ -35,15 +35,14 @@ pub struct Streak {
 
 impl Streak {
     // Takes a queue of messages, consuming when needed
-    pub fn new_with_queue(queue: &mut Vec<Message>, head_x: i32, length: i32, height: i32) -> Self {
+    pub fn new_with_queue(queue: &mut Vec<Message>, head_x: i32, length: i32, screen_height: i32, max_padding: i32) -> Self {
 	let mut rng = rand::thread_rng(); // TODO: fewer thread_rng()'s
-	let mut inner_text = ColorString::with_capacity(height as usize); // prealloc
+	let mut inner_text = ColorString::with_capacity(screen_height as usize); // prealloc
 	let first_msg: ColorString = queue.pop().unwrap().into();
-	let mut start: i32 = rng.gen_range(0, first_msg.len()+5) as i32 - first_msg.len() as i32; // TODO: make sure msg is long enough
+	let mut start: i32 = rng.gen_range(0, first_msg.len()+max_padding as usize) as i32 - first_msg.len() as i32 + 1; // make sure there's at least one char printed, space up to max_padding is allowed at top
 	if start > 0 {
 	    for _ in 0..start {
-		// pad out top if required
-		inner_text.push(ColorChar{data: ' ' as u32, attr: 0});
+		inner_text.push(ColorChar{data: ' ' as u32, attr: 0}); // pad out top if required
 	    }
 	}
 	for i in (
@@ -55,24 +54,35 @@ impl Streak {
 	)..first_msg.len() as i32 {
 	    inner_text.push(first_msg[i as usize]);
 	}
-	start += first_msg.len() as i32;
 	loop {
-	    let next_msg: ColorString = queue.pop().unwrap().into();
-	    let r = rng.gen_range(1,5);
-	    for _ in 0..r {
-		inner_text.push(ColorChar{data: ' ' as u32, attr: 0});
-	    }
-	    start += r;
-	    for i in 0..next_msg.len() as i32 {
-		if i+start <= height {
-		    inner_text.push(next_msg[i as usize]);
-		} else {
-		    break;
+	    let r: i32 = if max_padding > 0 {
+		rng.gen_range(1,max_padding)
+	    } else {
+		0 // if padding is forced to 0, never pad ever
+	    };
+	    if inner_text.len() as i32+r >= screen_height { // terminate early
+		for _ in 0..(screen_height as usize-inner_text.len()) {
+		    inner_text.push(ColorChar{data: ' ' as u32, attr: 0}); // fill remaining
+		}
+		break; // streak is full
+	    } else { // still need more content to fill
+		for _ in 0..r {
+		    inner_text.push(ColorChar{data: ' ' as u32, attr: 0});
 		}
 	    }
-	    start += next_msg.len() as i32;
-	    if start >= height {
-		break;
+
+	    let next_msg: ColorString = queue.pop().unwrap().into(); // grab more content
+	    
+	    if inner_text.len()+next_msg.len() >= screen_height as usize { // terminate early
+		let e = screen_height as usize-inner_text.len();
+		for i in 0..e {
+		    inner_text.push(next_msg[i as usize]); // fill remaining
+		}
+		break; // streak is full
+	    } else {
+		for i in 0..next_msg.len() {
+		    inner_text.push(next_msg[i as usize]); // print full string, move on
+		}
 	    }
 	}
 	Streak{head_x, head_y: 0, length, inner_text}
@@ -137,6 +147,6 @@ impl From<Message> for ColorString {
 	    ret_str.push(ColorChar{data: message.body.as_bytes()[i] as u32, attr: message.color});
 	}
 	ret_str
-	
+	    
     }
 }

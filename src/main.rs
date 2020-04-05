@@ -105,14 +105,14 @@ fn main() {
 
     let mut messages: Vec<Message> = Vec::new();
     for _ in 0..10 {
-	messages.push(Message::new("head ".to_string(), "body".to_string(), COLOR_PAIR(COLOR_PAIR_GREEN)));
+	messages.push(Message::new("head".to_string(), "body".to_string(), COLOR_PAIR(COLOR_PAIR_GREEN)));
     }
     /*
     for report in reports {
 	messages.push(Message::new_from_report(report, COLOR_PAIR(COLOR_PAIR_GREEN), COLOR_PAIR(COLOR_PAIR_RED), COLOR_PAIR(COLOR_PAIR_NORMAL)));
     }*/
 
-    let mut streak = Streak::new_with_queue(&mut messages, 0, 5, screen_height);
+    let mut streak = Streak::new_with_queue(&mut messages, 0, 5, screen_height, 5);
 
     while !streak.finished(screen_height) {
 	streak.render(screen_height);
