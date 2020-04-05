@@ -1,7 +1,5 @@
-use ncurses::attr_t;
-use ncurses::attron;
-use ncurses::attroff;
-use ncurses::mvaddch;
+use ncurses::{attron, attroff, mvaddch};
+use ncurses::{attr_t, A_BOLD};
 use crate::requests::Report;
 use std::collections::VecDeque;
 
@@ -49,7 +47,6 @@ impl MessageQueue {
 
 pub struct Scene {
     columns:     Vec<Column>,  // holds all streaks in the scene
-    width:       i32,          // width of the scene
     height:      i32,          // height of the scene
     queue:       MessageQueue, // Messages yet to be printed
     background:  attr_t,       // used for derendering
@@ -62,7 +59,7 @@ impl Scene {
 	for _ in 0..width {
 	    columns.push(Column::new());
 	}
-	Self{columns, width, height, queue: MessageQueue::new(width as usize, is_closed), background, max_padding}
+	Self{columns, height, queue: MessageQueue::new(width as usize, is_closed), background, max_padding}
     }
     pub fn push(&mut self, message: Message){
 	self.queue.push(message);
@@ -244,7 +241,7 @@ impl From<&Message> for ColorString {
     fn from(message: &Message) -> ColorString {
 	let mut ret_str = ColorString::with_capacity(message.len());
 	for i in 0..message.title.len() {
-	    ret_str.push(ColorChar{data: message.title.as_bytes()[i] as u32, attr: message.color}); // TODO: add bold
+	    ret_str.push(ColorChar{data: message.title.as_bytes()[i] as u32, attr: message.color | A_BOLD()});
 	}
 	for i in 0..message.body.len() {
 	    ret_str.push(ColorChar{data: message.body.as_bytes()[i] as u32, attr: message.color});
