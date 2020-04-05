@@ -3,6 +3,7 @@ use ncurses::attron;
 use ncurses::attroff;
 use ncurses::mvaddch;
 use crate::requests::Report;
+use std::collections::VecDeque;
 
 extern crate rand;
 use rand::Rng;
@@ -17,6 +18,31 @@ impl Column {
     }
 }
 
+pub struct MessageQueue {
+    data: VecDeque<Message>,
+    closed: bool,       // recycle data?
+}
+
+impl MessageQueue {
+    fn new(capacity: usize, closed: bool) -> Self {
+	Self{data: VecDeque::with_capacity(capacity), closed}
+    }
+    fn pop(&mut self) -> Option<Message> {
+	let message_check = self.data.pop_front();
+	if message_check.is_none() {
+	    return None
+	}
+	let message = message_check.unwrap();
+	if self.closed { // recycle to back of queue
+	    self.data.push_back(message.clone());
+	}
+	Some(message)
+    }
+    fn push(&mut self, message: Message) {
+	self.data.push_back(message);
+    }
+}
+
 // Scene struct
 // Holds all data for the scene, including:
 //   Streaks (light things up and hold messages)
@@ -25,28 +51,24 @@ impl Column {
 // Handles updating, can render
 
 pub struct Scene {
-    columns:     Vec<Column>, // holds all streaks in the scene
-    width:       i32,              // width of the scene
-    height:      i32,              // height of the scene
-    queue:       Vec<Message>,     // Messages yet to be printed
-    background:  attr_t,           // used for derendering
-    max_padding: i32
+    columns:     Vec<Column>,  // holds all streaks in the scene
+    width:       i32,          // width of the scene
+    height:      i32,          // height of the scene
+    queue:       MessageQueue, // Messages yet to be printed
+    background:  attr_t,       // used for derendering
+    max_padding: i32,
 }
 
 impl Scene {
-    pub fn new(width: i32, height: i32, max_padding: i32, background: attr_t) -> Self {
+    pub fn new(width: i32, height: i32, max_padding: i32, background: attr_t, is_closed: bool) -> Self {
 	let mut columns = Vec::new();
 	for _ in 0..width {
 	    columns.push(Column::new());
 	}
-	Self{columns, width, height, queue: Vec::with_capacity(width as usize), background, max_padding}
+	Self{columns, width, height, queue: MessageQueue::new(width as usize, is_closed), background, max_padding}
     }
     pub fn push(&mut self, message: Message){
 	self.queue.push(message);
-    }
-    pub fn seed(&mut self) { // TODO: is this needed?
-	let mut rng = rand::thread_rng(); // TODO: fewer thread_rng()'s
-	self.columns[0].streaks.push(Streak::new_with_queue(&mut self.queue, 0, rng.gen_range(5, self.height*2), self.height, self.max_padding));
     }
     pub fn advance(&mut self){ // move all streaks, clean up dead ones, try to spawn new ones
 	let mut rng = rand::thread_rng(); // TODO: fewer thread_rng()'s
@@ -86,31 +108,42 @@ pub struct Streak {
 
 impl Streak {
     // Takes a queue of messages, consuming when needed
-    pub fn new_with_queue(queue: &mut Vec<Message>, head_x: i32, length: i32, screen_height: i32, max_padding: i32) -> Self {
+    pub fn new_with_queue(queue: &mut MessageQueue, head_x: i32, length: i32, screen_height: i32, max_padding: i32) -> Self {
 	let mut rng = rand::thread_rng(); // TODO: fewer thread_rng()'s
 	let mut inner_text = ColorString::with_capacity(screen_height as usize); // prealloc
-	let first_msg: ColorString = queue.pop().unwrap().into();
-	let mut start: i32 = rng.gen_range(0, first_msg.len()+max_padding as usize) as i32 - first_msg.len() as i32 + 1; // make sure there's at least one char printed, space up to max_padding is allowed at top
-	if start > screen_height {
-	    start = screen_height; // don't overflow
-	}
-	if start > 0 {
-	    for _ in 0..start {
+	let first_msg_check = queue.pop();
+	if let None = first_msg_check {
+	    for _ in 0..screen_height {
 		inner_text.push(ColorChar{data: ' ' as u32, attr: 0}); // pad out top if required
 	    }
+	    return Streak{head_x, head_y: 0, length, inner_text}; // nothing to do!
 	}
-	for i in (
-	    if start < 0 {
-		-start // cut off relevant portion of message if required
-	    } else {
-		0
+	let first_msg = first_msg_check.unwrap();
+	{
+	    let first_string: ColorString = (&first_msg).into();
+	    let mut start: i32 = rng.gen_range(0, first_string.len()+max_padding as usize) as i32 - first_string.len() as i32 + 1; // make sure there's at least one char printed, space up to max_padding is allowed at top
+	    if start > screen_height {
+		start = screen_height; // don't overflow
 	    }
-	)..(screen_height.min(first_msg.len() as i32)) {
-	    inner_text.push(first_msg[i as usize]);
-	    if inner_text.len() as i32 >= screen_height {
-		return Streak{head_x, head_y: 0, length, inner_text}; // if first message is too long
+	    if start > 0 {
+		for _ in 0..start {
+		    inner_text.push(ColorChar{data: ' ' as u32, attr: 0}); // pad out top if required
+		}
+	    }
+	    for i in (
+		if start < 0 {
+		    -start // cut off relevant portion of message if required
+		} else {
+		    0
+		}
+	    )..(screen_height.min(first_string.len() as i32)) {
+		inner_text.push(first_string[i as usize]);
+		if inner_text.len() as i32 >= screen_height {
+		    return Streak{head_x, head_y: 0, length, inner_text}; // if first message is too long
+		}
 	    }
 	}
+	
 	loop {
 	    let r: i32 = if max_padding > 0 {
 		rng.gen_range(1,max_padding)
@@ -128,17 +161,27 @@ impl Streak {
 		}
 	    }
 
-	    let next_msg: ColorString = queue.pop().unwrap().into(); // grab more content
 	    
-	    if inner_text.len()+next_msg.len() >= screen_height as usize { // terminate early
-		let e = screen_height as usize-inner_text.len();
-		for i in 0..e {
-		    inner_text.push(next_msg[i as usize]); // fill remaining
+	    let next_msg_check = queue.pop();
+	    if let None = next_msg_check {
+		for _ in inner_text.len() as i32..screen_height {
+		    inner_text.push(ColorChar{data: ' ' as u32, attr: 0}); // pad out top if required
 		}
-		break; // streak is full
-	    } else {
-		for i in 0..next_msg.len() {
-		    inner_text.push(next_msg[i as usize]); // print full string, move on
+		return Streak{head_x, head_y: 0, length, inner_text}; // nothing to do!
+	    }
+	    let next_msg = next_msg_check.unwrap();
+	    {
+		let next_string: ColorString = (&next_msg).into();
+		
+		if inner_text.len()+next_string.len() >= screen_height as usize { // terminate early
+		    for i in 0..(screen_height as usize-inner_text.len()) {
+			inner_text.push(next_string[i as usize]); // fill remaining
+		    }
+		    break; // streak is full
+		} else {
+		    for i in 0..next_string.len() {
+			inner_text.push(next_string[i as usize]); // print full string, move on
+		    }
 		}
 	    }
 	}
@@ -190,15 +233,21 @@ impl Message {
 	Self{title, body, color}
     }
     pub fn new_from_report(report: Report, color_good: attr_t, color_bad: attr_t, color_neutral: attr_t) -> Self {
-	Self{title: "NYI".to_string(), body: " not yet implimented".to_string(), color: color_good}
+	Self{title: report.ticker, body: format!("{:.2}$ {:.2}%", report.change.abs(), &report.change_percent.abs()), color: if report.change > 0.0 {color_good} else if report.change < 0.0 {color_bad} else {color_neutral}}
     }
     pub fn len(&self) -> usize {
 	self.title.len()+self.body.len()
     }
 }
 
-impl From<Message> for ColorString {
-    fn from(message: Message) -> ColorString {
+impl Clone for Message {
+    fn clone(&self) -> Self {
+	Message::new(self.title.clone(), self.body.clone(), self.color)
+    }
+}
+
+impl From<&Message> for ColorString {
+    fn from(message: &Message) -> ColorString {
 	let mut ret_str = ColorString::with_capacity(message.len());
 	for i in 0..message.title.len() {
 	    ret_str.push(ColorChar{data: message.title.as_bytes()[i] as u32, attr: message.color}); // TODO: add bold
@@ -207,6 +256,5 @@ impl From<Message> for ColorString {
 	    ret_str.push(ColorChar{data: message.body.as_bytes()[i] as u32, attr: message.color});
 	}
 	ret_str
-	    
     }
 }

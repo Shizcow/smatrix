@@ -84,7 +84,7 @@ fn main() {
 
 
 
-    /*
+    
     let mut reports; // TODO: connecting to the matrix art
     {
 	attron(COLOR_PAIR(COLOR_PAIR_NORMAL));
@@ -101,69 +101,19 @@ fn main() {
 	refresh();
 	attroff(COLOR_PAIR(COLOR_PAIR_NORMAL));
     }
-     */
 
-    /*let mut queue: Vec<Message> = Vec::new();
-    for _ in 0..100 {
-	messages.push(Message::new("head".to_string(), "body".to_string(), COLOR_PAIR(COLOR_PAIR_GREEN)));
-    }
-    /*
+    
+
+    let mut scene = Scene::new(screen_width, screen_height, 15, COLOR_PAIR(COLOR_PAIR_NORMAL), true);
     for report in reports {
-	messages.push(Message::new_from_report(report, COLOR_PAIR(COLOR_PAIR_GREEN), COLOR_PAIR(COLOR_PAIR_RED), COLOR_PAIR(COLOR_PAIR_NORMAL)));
-    }*/
-
-    let mut scene = Scene::new(screen_width, screen_height, 5, COLOR_PAIR(COLOR_PAIR_NORMAL));
-    
-
-    while !streak.finished(screen_height) {
-	streak.render(screen_height);
-	streak.derender(COLOR_PAIR(COLOR_PAIR_RED));
-	refresh();
-	streak.advance();
-	thread::sleep(time::Duration::from_millis(100));
-    }*/
-
-
-    
-
-    let mut scene = Scene::new(screen_width, screen_height, 50, COLOR_PAIR(COLOR_PAIR_NORMAL));
-    for i in (0..10000).rev() {
-	scene.push(Message::new("head ".to_string(), "body#".to_string()+&i.to_string(), COLOR_PAIR(COLOR_PAIR_GREEN)));
+	scene.push(Message::new_from_report(report, COLOR_PAIR(COLOR_PAIR_GREEN), COLOR_PAIR(COLOR_PAIR_RED), COLOR_PAIR(COLOR_PAIR_NORMAL)));
     }
-
-    scene.seed();
 
     loop {
 	scene.advance();
 	refresh();
 	thread::sleep(time::Duration::from_millis(100));
     }
-    
-    /*
-    let mut streaks: Vec<Streak> = Vec::new();
-    for report in reports {
-	for _ in 0..3 { // try to spawn
-	    let target_x = rng.gen_range(0, screen_width-1);
-	    let mut any = false;
-	    for i in 0..streaks.len() { // couldn't figure out Iterator::any
-		if streaks[i].x_head==target_x {
-		    any = true;
-		    break;
-		}
-	    }
-	    if !any {
-		streaks.push(Streak::new_from_report(&report, target_x, (COLOR_PAIR(COLOR_PAIR_GREEN), COLOR_PAIR(COLOR_PAIR_RED), COLOR_PAIR(COLOR_PAIR_NORMAL))));
-		break;
-	    }
-	}
-	for streak in &mut streaks {
-	    streak.update();
-	}
-	streaks.retain(|streak|!streak.finished(screen_height));
-	refresh();
-	thread::sleep(time::Duration::from_millis(100));
-    }    
-     */
 
     endwin();
 }
