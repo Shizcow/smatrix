@@ -7,20 +7,27 @@
 use curl::easy::Easy;
 use std::str;
 use scraper::{Html, Selector};
+use ncurses::attr_t;
+use matrixise::Message;
 
 
 fn build_quote_url(tickers: &Vec<String>) -> String {
     "https://query1.finance.yahoo.com/v7/finance/quote?symbols=".to_string() + &tickers.join(",")
 }
 
-pub struct Report { // TODO: change these into strings, impl len() and such
+pub struct Report {
     pub ticker: String,
     pub price: f32,
     pub change: f32,
     pub change_percent: f32
 }
 
-#[allow(dead_code)]
+impl Report {
+    pub fn to_message(self, color_good: attr_t, color_bad: attr_t, color_neutral: attr_t) -> Message {
+	Message::new_with_title(&self.ticker, &format!(" {:.2}$ {:.2}%", self.change.abs(), &self.change_percent.abs()), if self.change > 0.0 {color_good} else if self.change < 0.0 {color_bad} else {color_neutral}, &self.ticker)
+    }
+}
+
 pub fn request_tickers(tickers: &Vec<String>) -> Vec<Report> {
     let mut response = Vec::new();
     {
@@ -56,8 +63,7 @@ pub fn request_tickers(tickers: &Vec<String>) -> Vec<Report> {
     reports
 }
 
-// NOTE: there's more than 500 tickers
-#[allow(dead_code)]
+// NOTE: there's more than 500 tickers, so we need a vector
 pub fn get_sp500_tickers() -> Vec<String>  {
     let mut response = Vec::new();
     {
