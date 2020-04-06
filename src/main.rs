@@ -11,6 +11,8 @@ use matrixise::*;
 
 use rand::seq::SliceRandom;
 
+use std::time::Duration;
+
 use ncurses::{COLOR_PAIR, init_pair, attron, attroff, refresh, mvprintw, chtype, bkgd};
 use ncurses::constants::*;
 static COLOR_PAIR_BACKGROUND: i16 = 1;
@@ -45,7 +47,7 @@ fn main() {
 	attroff(COLOR_PAIR(COLOR_PAIR_NORMAL));
     }
 
-    let mut scene = Scene::new(15, COLOR_BLACK, true);
+    let mut scene = Scene::new(15, COLOR_BLACK, true, Duration::from_millis(20));
 
     // push a few reports, then start. Reduces startup lag
     if reports.len() > 20 {
@@ -61,7 +63,9 @@ fn main() {
     while reports.len() > 0 {
 	scene.push(reports.pop().unwrap().to_message(COLOR_PAIR(COLOR_PAIR_GREEN), COLOR_PAIR(COLOR_PAIR_RED), COLOR_PAIR(COLOR_PAIR_NORMAL)));
     }
-    
+
+
+    // TODO: update every once in a while
 
     scene.join();
 }
