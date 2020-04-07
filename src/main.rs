@@ -11,7 +11,7 @@ use matrixise::*;
 
 use rand::seq::SliceRandom;
 
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use ncurses::{COLOR_PAIR, init_pair, attron, attroff, refresh, mvprintw, chtype, bkgd};
 use ncurses::constants::*;
@@ -31,11 +31,12 @@ fn main() {
 
     
     let mut reports; // TODO: connecting to the matrix art
+    let sp; // keep these around to update later
     {
 	attron(COLOR_PAIR(COLOR_PAIR_NORMAL));
 	mvprintw(0, 0, "Downloading S&P500 ticker symbols...");
 	refresh();
-	let sp = get_sp500_tickers();
+	sp = get_sp500_tickers();
 	mvprintw(0, 0, "Downloading stock prices...         ");
 	refresh();
 	reports = request_tickers(&sp);
@@ -48,24 +49,17 @@ fn main() {
     }
 
     let mut scene = Scene::new(15, COLOR_BLACK, true, Duration::from_millis(20));
+    scene.append(reports.into_iter().map(|report| report.to_message(COLOR_PAIR(COLOR_PAIR_GREEN), COLOR_PAIR(COLOR_PAIR_RED), COLOR_PAIR(COLOR_PAIR_NORMAL))).collect());
 
-    // push a few reports, then start. Reduces startup lag
-    if reports.len() > 20 {
-	for _ in 0..20 {
-	    scene.push(reports.pop().unwrap().to_message(COLOR_PAIR(COLOR_PAIR_GREEN), COLOR_PAIR(COLOR_PAIR_RED), COLOR_PAIR(COLOR_PAIR_NORMAL)));
-	}
-    } else {
-	while reports.len() > 0 {
-	    scene.push(reports.pop().unwrap().to_message(COLOR_PAIR(COLOR_PAIR_GREEN), COLOR_PAIR(COLOR_PAIR_RED), COLOR_PAIR(COLOR_PAIR_NORMAL)));
-	}
-    }
+    
     scene.start();
-    while reports.len() > 0 {
-	scene.push(reports.pop().unwrap().to_message(COLOR_PAIR(COLOR_PAIR_GREEN), COLOR_PAIR(COLOR_PAIR_RED), COLOR_PAIR(COLOR_PAIR_NORMAL)));
+
+
+    let time = Instant::now();
+    while scene.alive() {
+	if time.elapsed() > Duration::from_millis(1000*30) {
+	    reports = request_tickers(&sp);
+	    scene.append_update(reports.into_iter().map(|report| report.to_message(COLOR_PAIR(COLOR_PAIR_GREEN), COLOR_PAIR(COLOR_PAIR_RED), COLOR_PAIR(COLOR_PAIR_NORMAL))).collect());
+	}
     }
-
-
-    // TODO: update every once in a while
-
-    scene.join();
 }
