@@ -7,7 +7,6 @@
 use curl::easy::Easy;
 use std::str;
 use scraper::{Html, Selector};
-use ncurses::attr_t;
 use matrixise::Message;
 
 
@@ -23,8 +22,8 @@ pub struct Report {
 }
 
 impl Report {
-    pub fn to_message(self, color_good: attr_t, color_bad: attr_t, color_neutral: attr_t) -> Message {
-	Message::new_with_title(&self.ticker, &format!(" {:.2}$ {:.2}%", self.change.abs(), &self.change_percent.abs()), if self.change > 0.0 {color_good} else if self.change < 0.0 {color_bad} else {color_neutral}, &self.ticker)
+    pub fn to_message(self, pair_good: i16, pair_bad: i16, pair_neutral: i16) -> Message {
+	Message::new_with_title(&self.ticker, &format!(" {:.2}$ {:.2}%", self.change.abs(), &self.change_percent.abs()), if self.change > 0.0 {pair_good} else if self.change < 0.0 {pair_bad} else {pair_neutral}, &self.ticker)
     }
 }
 

@@ -1,6 +1,6 @@
 [package]
 name = "smatrix"
-version = "1.1.0"
+version = "1.1.1"
 authors = ["Shizcow <pohl.devin@gmail.com>"]
 edition = "2018"
 
@@ -8,6 +8,5 @@ edition = "2018"
 json = "0.12.4"
 curl = "0.4.28"
 scraper = "0.11.0"
-ncurses = "5.99.0"
 rand = "0.7.3"
-matrixise = "1.1.0"
+matrixise = "2.0.0"
